@@ -1,7 +1,7 @@
 import streamlit as st
 import openai
 
-st.set_page_config(page_title="Certificazione Team Work – Modulare", layout="centered")
+st.set_page_config(page_title="Certificazione Team Work – Modulo Singolo", layout="centered")
 
 # --- Setup Iniziale ---
 if "step" not in st.session_state:
@@ -30,15 +30,22 @@ soft_skills = [
 def genera_domanda_softskill(nome, skill, storia_risposte):
     contesto = "\n".join([f"D: {d}\nR: {r}" for d, r in storia_risposte]) if storia_risposte else ""
     prompt = f"""
-Sei un esperto di assessment del comportamento sul lavoro. Genera una domanda per valutare la sotto-soft skill "{skill}" nel contesto della soft skill Team Work.
-Nome candidato: {nome}
-Storia precedente:
+Agisci come un team composto da:
+- uno psicologo del lavoro (Paul E. Spector),
+- uno specialista di intelligenza emotiva (Daniel Goleman),
+- un esperto di comunicazione empatica (Marshall Rosenberg),
+- un esperto di comportamenti organizzativi (Chris Argyris),
+- un teorico delle competenze (David McClelland).
+
+Genera una singola domanda comportamentale per valutare la soft skill "{skill}" come sotto-componente del Team Work.
+
+La domanda deve essere chiara, professionale e suddivisa in tre parti:
+1. Scenario (reale e lavorativo)
+2. Problema (specifico e concreto)
+3. Domanda (cosa faresti?)
+
+Evita ambiguità, usa linguaggio semplice e chiaro. Ogni parte su una riga diversa.
 {contesto}
-La domanda deve essere situazionale e strutturata in tre righe:
-1. Scenario
-2. Problema
-3. Domanda
-Scrivi ogni parte su una riga diversa.
 """
     out = openai.chat.completions.create(
         model="gpt-3.5-turbo",
@@ -62,10 +69,27 @@ Motivazione: ..."""
     return out.choices[0].message.content.strip()
 
 def genera_descrizione(parziale):
-    prompt = f"""Genera una breve descrizione (10 righe) del comportamento del candidato in relazione alla seguente sotto-soft skill del Team Work: {parziale['skill']}.
-Nome: {parziale['nome']}
-Media punteggio: {parziale['media']}
-Suggerisci anche 1 area di miglioramento e 1 corso formativo utile (solo il titolo, senza provider)."""
+    prompt = f"""
+Agisci come un team di:
+- psicologi del lavoro (Paul E. Spector),
+- specialisti di intelligenza emotiva (Daniel Goleman),
+- esperti di comunicazione empatica (Marshall Rosenberg),
+- esperti di comportamenti organizzativi (Chris Argyris),
+- teorici delle competenze (David McClelland).
+
+Il candidato {parziale['nome']} ha ottenuto una media di {parziale['media']}/100 nella sotto-soft skill {parziale['skill']}.
+
+Analizza le seguenti risposte e motivazioni:
+{parziale['risposte']}
+
+Genera un report suddiviso in 4 sezioni:
+1. Sintesi punteggio e livello
+2. Analisi dettagliata dei comportamenti osservati (con riferimenti alle risposte)
+3. Suggerimenti pratici per migliorare
+4. Corso formativo consigliato (solo il titolo)
+
+Tono professionale, coerente con il livello. Se il punteggio è basso, sii severo ma costruttivo.
+"""
     out = openai.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=[{"role": "user", "content": prompt}]
@@ -142,8 +166,15 @@ elif st.session_state.step == "risultato":
         st.warning("Continua ad allenarti per ottenere la certificazione.")
 
     st.markdown("### 📄 Analisi del profilo")
-    descrizione = genera_descrizione({"nome": st.session_state.profilo_utente['nome'], "skill": st.session_state.profilo_utente['skill'], "media": media})
-    st.markdown(descrizione)
+    report_input = {
+        "nome": st.session_state.profilo_utente['nome'],
+        "skill": st.session_state.profilo_utente['skill'],
+        "media": media,
+        "risposte": "\n\n".join(st.session_state.valutazioni)
+    }
+    descrizione = genera_descrizione(report_input)
+    for r in descrizione.split("\n"):
+        st.markdown(r)
 
     if st.button("🔁 Torna all’inizio"):
         st.session_state.clear()
