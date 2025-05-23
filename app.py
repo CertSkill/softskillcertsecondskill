@@ -180,3 +180,4 @@ elif st.session_state.step == "risultato":
     if st.button("🔄 Ricomincia il test"):
         st.session_state.clear()
         st.rerun()
+
