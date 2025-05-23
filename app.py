@@ -1,7 +1,7 @@
 import streamlit as st
 import openai
 
-st.set_page_config(page_title="Certificazione Team Work", layout="centered")
+st.set_page_config(page_title="Certificazione Team Work v1.0", layout="centered")
 
 # Inizializzazione variabili di sessione
 if "step" not in st.session_state:
@@ -16,14 +16,14 @@ if "step" not in st.session_state:
 # --- Funzioni ---
 
 def genera_prompt_iniziale(profilo):
-    return f"""Sei un team di esperti (HR manager, psicologo del lavoro, formatore, project manager e esperto UX).
+    return f"""Sei un esperto di soft skill secondo la letteratura accademica (Mayo, Lewin, Herzberg, Spector).
 In base al seguente profilo:
 Nome: {profilo['nome']}, Età: {profilo['eta']}, Azienda: {profilo['azienda']}, Settore: {profilo['settore']}, Ruolo: {profilo['ruolo']}, Esperienza settore: {profilo['anni_settore']} anni, Esperienza ruolo: {profilo['anni_ruolo']} anni
-Genera una domanda per valutare il teamwork composta da:
-- Scenario di contesto (variabile, coerente con ruolo e settore)
+Genera una domanda per valutare il teamwork, strutturata in:
+- Scenario di contesto realistico
 - Problema osservato
-- Domanda specifica chiara e concreta
-Scrivi ogni parte su una riga diversa senza numerarle."""
+- Domanda precisa e non ambigua
+Scrivi ogni parte su una riga diversa."""
 
 def genera_domanda_dinamica(profilo, storia_risposte):
     contesto = "\n".join([f"D: {d}\nR: {r}" for d, r in storia_risposte])
@@ -33,24 +33,24 @@ Nome: {profilo['nome']}, Età: {profilo['eta']}, Azienda: {profilo['azienda']}, 
 Storia risposte:
 {contesto}
 
-Genera una nuova domanda originale per continuare il test sul teamwork. Non ripetere le domande precedenti. Domanda situazionale, concreta, strutturata in:
-- Scenario realistico e coerente
-- Problema specifico
-- Domanda diretta
-Ogni parte su una riga diversa."""
+Genera una nuova domanda per continuare il test sul teamwork. Strutturata in:
+- Scenario
+- Problema
+- Domanda chiara
+Scrivi ogni parte su una riga diversa. Evita ripetizioni."""
 
 def valuta_risposta(risposta):
     if not risposta.strip():
         return "Collaborazione: 0\nComunicazione: 0\nLeadership: 0\nProblem solving: 0\nEmpatia: 0\nMotivazione: Nessuna risposta fornita."
     prompt = f"""Valuta questa risposta in un contesto di lavoro in team:
-"{risposta}"
+\"{risposta}\"
 Assegna un punteggio da 0 a 100 per:
 - Collaborazione
 - Comunicazione
 - Leadership
 - Problem solving
 - Empatia
-Spiega brevemente ogni punteggio. Usa criteri oggettivi (chiarezza, coerenza, impatto)."""
+Spiega brevemente ogni punteggio. Usa criteri comportamentali concreti."""
     res = openai.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=[{"role": "user", "content": prompt}]
@@ -58,15 +58,22 @@ Spiega brevemente ogni punteggio. Usa criteri oggettivi (chiarezza, coerenza, im
     return res.choices[0].message.content.strip()
 
 def genera_descrizione_finale(profilo, media):
-    descrizione_prompt = f"""Genera una descrizione oggettiva di massimo 15 righe del profilo comportamentale del candidato {profilo['nome']}.
-Età: {profilo['eta']}, Azienda: {profilo['azienda']}, Settore: {profilo['settore']}, Ruolo: {profilo['ruolo']}, Esperienza: {profilo['anni_settore']} anni nel settore, {profilo['anni_ruolo']} anni nel ruolo.
+    descrizione_prompt = f"""Sei un esperto in assessment delle soft skill secondo Mayo, Lewin, Herzberg, Spector.
+Genera una descrizione oggettiva di massimo 15 righe basata su questi dati:
+
+Profilo: {profilo['nome']} ({profilo['eta']} anni), ruolo: {profilo['ruolo']} in {profilo['settore']}, esperienza: {profilo['anni_settore']} anni settore / {profilo['anni_ruolo']} anni ruolo.
+
 Punteggi:
 Collaborazione: {media['Collaborazione']}
 Comunicazione: {media['Comunicazione']}
 Leadership: {media['Leadership']}
 Problem solving: {media['Problem solving']}
 Empatia: {media['Empatia']}
-Spiega quali sono i punti forti (punteggio > 70), le aree carenti (< 50) e cosa suggeriresti come miglioramento. Elenca 3 corsi formativi pertinenti (solo titoli, no scuole o link)."""
+
+- Cita esplicitamente quali sono i punti deboli (sotto 50)
+- Quali sono i punti forti (sopra 70)
+- Cosa migliorare
+- 3 corsi suggeriti."""
     res = openai.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=[{"role": "user", "content": descrizione_prompt}]
@@ -75,7 +82,7 @@ Spiega quali sono i punti forti (punteggio > 70), le aree carenti (< 50) e cosa 
 
 # --- Fase 1: Profilazione ---
 if st.session_state.step == "profilo":
-    st.title("Certificazione Team Work – Sistema Adattivo e Coerente")
+    st.title("Certificazione Team Work – Adattivo e Coerente")
     st.subheader("Compila il tuo profilo per iniziare")
 
     nome = st.text_input("Nome e cognome")
@@ -180,4 +187,3 @@ elif st.session_state.step == "risultato":
     if st.button("🔄 Ricomincia il test"):
         st.session_state.clear()
         st.rerun()
-
